@@ -10,9 +10,28 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'client/dist')));
+
+// Middleware: Initialize licenses on first request (for Vercel serverless)
+app.use(async (req, res, next) => {
+  if (!isInitialized) {
+    isInitialized = true;
+    try {
+      await initializeLicenses();
+    } catch (error) {
+      console.error('Failed to initialize licenses:', error);
+    }
+  }
+  next();
+});
+
+// Only serve static files if client/dist exists (for local development)
+const clientDistPath = path.join(__dirname, 'client/dist');
+if (fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
+}
 
 let licensesData = [];
+let isInitialized = false;
 
 // Initialize - Parse all PDFs on startup
 async function initializeLicenses() {
@@ -222,20 +241,38 @@ app.get('/api/stats', (req, res) => {
   });
 });
 
-// Serve React app
+// Serve React app (if it exists)
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'client/dist/index.html'));
+  const indexPath = path.join(__dirname, 'client/dist/index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.json({
+      success: true,
+      message: 'License Verification API is running',
+      endpoints: {
+        search: 'POST /api/search',
+        stats: 'GET /api/stats'
+      }
+    });
+  }
 });
 
 const PORT = process.env.PORT || 5000;
 
-// Start server
-initializeLicenses().then(() => {
-  app.listen(PORT, () => {
-    console.log(`\n🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📍 Open your browser to see the application\n`);
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  // Start server
+  initializeLicenses().then(() => {
+    app.listen(PORT, () => {
+      console.log(`\n🚀 Server running on http://localhost:${PORT}`);
+      console.log(`📍 Open your browser to see the application\n`);
+    });
+  }).catch(error => {
+    console.error('Failed to initialize:', error);
+    process.exit(1);
   });
-}).catch(error => {
-  console.error('Failed to initialize:', error);
-  process.exit(1);
-});
+}
+
+// For Vercel serverless
+export default app;
