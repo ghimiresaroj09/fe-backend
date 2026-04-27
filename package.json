@@ -5,12 +5,12 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "setup": "npm install && cd client && npm install",
+    "setup": "npm install",
     "start": "node server.js",
     "dev": "node server.js",
-    "dev-ui": "cd client && npm run dev",
-    "build-ui": "cd client && npm run build",
-    "build": "npm run build-ui"
+    "dev-ui": "echo No client UI in this setup",
+    "build-ui": "echo No client UI to build",
+    "build": "echo Build complete"
   },
   "dependencies": {
     "express": "^4.18.2",
