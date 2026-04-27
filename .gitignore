@@ -1,0 +1,16 @@
+node_modules/
+client/node_modules/
+client/dist/
+.env
+.env.local
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-error.log*
+dist/
+build/
+.cache/
+.vite/
+.next/
+out/
